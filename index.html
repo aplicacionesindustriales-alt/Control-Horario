@@ -1,0 +1,33 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+  <meta name="theme-color" content="#111827">
+  <meta name="description" content="Control Horario V3.2">
+  <link rel="manifest" href="manifest.json">
+  <link rel="stylesheet" href="styles.css">
+  <title>Control Horario V3.2</title>
+</head>
+<body>
+<header class="topbar"><div><strong>Control Horario</strong><span>V3.2</span></div><button id="adminBtn" class="icon-btn" aria-label="Administración">⚙️</button></header>
+<main>
+  <section id="homeView" class="view active">
+    <div class="hero"><h1>Parte diario</h1><p>Registra las horas trabajadas por proyecto y tarea.</p></div>
+    <form id="reportForm" autocomplete="off">
+      <div class="card grid2">
+        <label>Fecha<input id="date" type="date" required></label>
+        <label>Trabajador<select id="worker" required><option value="">Selecciona trabajador</option></select></label>
+      </div>
+      <div class="card"><div class="section-title"><h2>Líneas del parte</h2><button type="button" id="addLine" class="secondary">+ Añadir línea</button></div><div id="lines"></div></div>
+      <div class="card summary"><div><span>Total horas</span><strong id="totalHours">0,00 h</strong></div><div><span>Estado</span><strong id="reportState">Sin enviar</strong></div></div>
+      <div class="actions"><button class="primary" type="submit">Guardar parte</button><button class="whatsapp" type="button" id="whatsappBtn">Enviar por WhatsApp</button></div>
+    </form>
+  </section>
+  <section id="historyView" class="view"><div class="section-title"><div><h1>Histórico</h1><p>Partes guardados en este dispositivo.</p></div><button id="exportBtn" class="secondary">Exportar CSV</button></div><div id="history"></div></section>
+  <section id="adminView" class="view"><div class="section-title"><div><h1>Administración</h1><p>Gestiona trabajadores, proyectos y tareas.</p></div><button id="closeAdmin" class="secondary">Cerrar</button></div><div class="tabs"><button data-tab="workers" class="tab active">Trabajadores</button><button data-tab="projects" class="tab">Proyectos</button><button data-tab="tasks" class="tab">Tareas</button><button data-tab="settings" class="tab">Configuración</button></div><div id="adminContent"></div></section>
+</main>
+<nav class="bottomnav"><button class="nav active" data-view="homeView">🕐<span>Parte</span></button><button class="nav" data-view="historyView">📋<span>Histórico</span></button><button class="nav" id="navAdmin">⚙️<span>Admin</span></button></nav>
+<div id="pinModal" class="modal hidden"><div class="modal-card"><h2>Administración</h2><p>Introduce el PIN de administración.</p><input id="pinInput" type="password" inputmode="numeric" maxlength="8" placeholder="PIN"><p id="pinError" class="error"></p><div class="actions"><button id="cancelPin" class="secondary">Cancelar</button><button id="confirmPin" class="primary">Entrar</button></div></div></div>
+<script src="app.js"></script><script>if('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js');</script>
+</body></n</html>
