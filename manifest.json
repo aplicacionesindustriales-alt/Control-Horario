@@ -1,0 +1,11 @@
+{
+  "name":"Control Horario V3.2",
+  "short_name":"Control Horario",
+  "lang":"es",
+  "start_url":"./",
+  "display":"standalone",
+  "background_color":"#f3f4f6",
+  "theme_color":"#111827",
+  "description":"Aplicación PWA para partes diarios y control horario.",
+  "icons":[{"src":"icon.svg","sizes":"any","type":"image/svg+xml","purpose":"any maskable"}]
+}
