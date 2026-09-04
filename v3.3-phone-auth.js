@@ -1,0 +1,14 @@
+(function(){
+'use strict';
+const C=()=>window.ControlHorarioSupabase;
+const normalize=p=>{let x=String(p||'').trim().replace(/[\s().-]/g,'');if(x.startsWith('00'))x='+'+x.slice(2);if(!x.startsWith('+')&&/^6|^7/.test(x))x='+34'+x;return x};
+let pending='';
+function box(){return document.getElementById('cloudBox')}
+function msg(s){const x=document.getElementById('phoneAuthMsg');if(x)x.textContent=s}
+function render(){const b=box();if(!b||!C()?.configured)return;const session=window.ControlHorarioPhoneAuthSession;if(session)return; b.innerHTML='<strong>📱 Control Horario</strong><p style="margin:6px 0 10px;color:#6b7280">Acceso mediante teléfono móvil. Recibirás un código SMS.</p><input id="phoneAuthPhone" type="tel" inputmode="tel" autocomplete="tel" placeholder="Teléfono móvil (+34 600 000 000)" style="width:100%;box-sizing:border-box;margin:3px 0;padding:8px"><div id="phoneOtpWrap" style="display:none"><input id="phoneAuthOtp" inputmode="numeric" autocomplete="one-time-code" maxlength="6" placeholder="Código SMS" style="width:100%;box-sizing:border-box;margin:3px 0;padding:8px"></div><div style="display:flex;gap:6px;margin-top:6px"><button id="phoneSendOtp">Enviar código</button><button id="phoneVerifyOtp" style="display:none">Verificar</button></div><small id="phoneAuthMsg"></small>';document.getElementById('phoneSendOtp').onclick=send;document.getElementById('phoneVerifyOtp').onclick=verify}
+async function send(){try{const p=normalize(document.getElementById('phoneAuthPhone').value);if(!/^\+[1-9]\d{7,14}$/.test(p))throw new Error('Introduce un teléfono válido con prefijo internacional, por ejemplo +34 600 000 000.');pending=p;msg('Enviando código…');const r=await C().auth.signIn(p);if(r.error)throw r.error;document.getElementById('phoneOtpWrap').style.display='block';document.getElementById('phoneVerifyOtp').style.display='inline-block';document.getElementById('phoneSendOtp').textContent='Reenviar código';msg('Código enviado por SMS.')}catch(e){msg(e.message||'No se pudo enviar el código')}}
+async function verify(){try{const token=document.getElementById('phoneAuthOtp').value.trim();if(!pending||!/^[0-9]{6}$/.test(token))throw new Error('Introduce el código de 6 dígitos recibido por SMS.');msg('Verificando…');const r=await C().auth.verifyOtp(pending,token);if(r.error)throw r.error;window.ControlHorarioPhoneAuthSession=r.data.session;msg('Acceso correcto. Cargando…');sessionStorage.removeItem('ch_cloud_loaded');location.reload()}catch(e){msg(e.message||'Código no válido')}}
+function loop(){render()}
+if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',()=>setTimeout(loop,700));else setTimeout(loop,700);
+setInterval(loop,1000);
+})();
