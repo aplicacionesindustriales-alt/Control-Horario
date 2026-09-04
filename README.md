@@ -1,6 +1,6 @@
 # Control Horario V3.2
 
-PWA estática para partes diarios de trabajo.
+PWA para partes diarios de trabajo, preparada para instalarse en móviles y ordenadores sin instalar un programa tradicional.
 
 ## Funciones incluidas
 
@@ -13,9 +13,10 @@ PWA estática para partes diarios de trabajo.
 - Exportación CSV.
 - Administración protegida por PIN configurable.
 - Alta y activación/desactivación de trabajadores, proyectos y tareas.
-- Numeración automática de proyectos `IM260001` a `IM260100`.
+- Código de proyecto independiente y editable, con propuesta automática de numeración.
 - Copia de seguridad y restauración en JSON.
 - Funcionamiento PWA y modo offline mediante Service Worker.
+- Instalación en Android, iPhone/iPad, Windows y otros equipos compatibles con PWA.
 
 ## Datos iniciales
 
@@ -30,12 +31,24 @@ Las seis tareas previstas pueden darse de alta desde Administración:
 5. Programación
 6. Robótica
 
+## Instalación y distribución
+
+La aplicación se distribuye mediante un único enlace de GitHub Pages:
+
+https://aplicacionesindustriales-alt.github.io/Control-Horario/
+
+El trabajador abre el enlace desde su móvil o PC y utiliza la opción **Instalar aplicación** o **Añadir a pantalla de inicio** del navegador.
+
+No se necesita APK, EXE ni instalación manual de archivos.
+
+Las instrucciones completas están en [INSTALACION.md](INSTALACION.md).
+
 ## Almacenamiento
 
-Esta primera versión utiliza `localStorage` del navegador. Los datos permanecen en el dispositivo/navegador donde se introducen. La copia de seguridad permite trasladarlos manualmente.
+Esta versión utiliza `localStorage` del navegador. Los datos permanecen en el dispositivo/navegador donde se introducen. La copia de seguridad permite trasladarlos manualmente a otro dispositivo.
 
 El PIN es una protección de acceso a la interfaz de administración del dispositivo; no debe considerarse un sistema de autenticación de servidor.
 
 ## Publicación
 
-El contenido es una aplicación web estática y puede publicarse con GitHub Pages. Tras habilitar Pages para este repositorio usando la rama `main`, el sitio quedará disponible en la URL que GitHub asigne.
+El repositorio utiliza GitHub Pages mediante GitHub Actions. Cada cambio realizado en `main` se publica automáticamente cuando finaliza correctamente el flujo de despliegue.
