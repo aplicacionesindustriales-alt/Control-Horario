@@ -5,6 +5,26 @@ const esc=v=>String(v??'').replace(/[&<>\"']/g,c=>({'&':'&amp;','<':'&lt;','>':'
 const isAdmin=()=>window.ControlHorarioRole==='admin'||document.querySelector('[data-view="adminView"]')?.classList.contains('active')||!!localStorage.getItem('ch_admin_session');
 const call=body=>{const c=C();if(!c?.configured||!c.client)throw new Error('Supabase no configurado');return c.client.functions.invoke('admin-users',{body})};
 function localWorkers(){try{return JSON.parse(localStorage.getItem('ch_workers')||'[]').filter(x=>x.active!==false)}catch{return []}}
+async function load(){
+  let listWorkers=[];
+  let listError=null;
+  try{
+    const r=await call({action:'list'});
+    if(r.error)throw r.error;
+    users=r.data?.users||[];
+    listWorkers=users.map(u=>u.employee||{id:u.employee_id,name:'',code:'',email:'',phone:'',active:true}).filter(w=>w.id&&w.active!==false).map(w=>({id:w.id,name:w.name||'Trabajador',active:w.active!==false,code:w.code,email:w.email,phone:w.phone}));
+  }catch(e){listError=e}
+  if(!listWorkers.length){
+    try{listWorkers=await directEmployeeLoad()}catch(e){console.warn('No se pudo cargar employees directamente:',e)}
+  }
+  if(!listWorkers.length)listWorkers=localWorkers();
+  if(!listWorkers.length){throw listError||new Error('No se encontraron trabajadores activos.')}
+  directWorkers=listWorkers;
+  localStorage.setItem('ch_workers',JSON.stringify(directWorkers));
+  try{await syncLocalWorkers(directWorkers)}catch(e){console.warn('Sincronización de trabajadores:',e)}
+  if(!users.length){try{const r=await call({action:'list'});if(!r.error)users=r.data?.users||[]}catch{}}
+  render(directWorkers);
+}
 async function directEmployeeLoad(){
   const c=C();if(!c?.client)throw new Error('Supabase no configurado');
   const s=await c.client.auth.getSession();
@@ -17,19 +37,7 @@ async function directEmployeeLoad(){
   if(p.data.role!=='admin')throw new Error('La cuenta actual no tiene permisos de administrador.');
   const e=await c.client.from('employees').select('id,first_name,last_name,employee_code,email,phone,active').eq('company_id',p.data.company_id).eq('active',true).order('first_name');
   if(e.error)throw e.error;
-  directWorkers=(e.data||[]).map(x=>({id:x.id,name:(x.first_name+' '+x.last_name).trim(),active:x.active,code:x.employee_code,email:x.email,phone:x.phone}));
-  localStorage.setItem('ch_workers',JSON.stringify(directWorkers));
-  return directWorkers;
-}
-async function load(){
-  // La lista de trabajadores se obtiene directamente de employees. No depende de
-  // ch_workers ni de que existan cuentas de acceso previamente creadas.
-  const workers=await directEmployeeLoad();
-  try{await syncLocalWorkers(workers)}catch(e){console.warn('Sincronización de trabajadores:',e)}
-  const r=await call({action:'list'});
-  if(r.error)throw r.error;
-  users=r.data?.users||[];
-  render(workers);
+  return (e.data||[]).map(x=>({id:x.id,name:(x.first_name+' '+x.last_name).trim(),active:x.active,code:x.employee_code,email:x.email,phone:x.phone}));
 }
 async function syncLocalWorkers(workers){for(const w of workers){try{await call({action:'sync',employee:{name:w.name,code:w.code,email:w.email,phone:w.phone,active:true}})}catch(e){console.warn('No se pudo sincronizar trabajador',w,e)}}}
 function render(workers=directWorkers){const c=document.getElementById('adminContent');if(!c)return;const byId=new Map(users.map(u=>[u.employee_id,u]));c.innerHTML=`<div class="card users-card"><div class="section-title"><div><h2>Usuarios y accesos</h2><p class="small">Todos los trabajadores aparecen aquí. Los que indiquen “Sin cuenta” pueden recibir un código personal de 6 dígitos.</p></div><button id="newUser" class="primary">＋ Nueva cuenta</button></div><div class="users-table">${workers.length?workers.map(w=>{const u=byId.get(w.id),has=!!u?.has_pin;const status=has?(u.active?'Activa':'Desactivada'):'Sin cuenta';return `<div class="user-row"><div><strong>👤 ${esc(w.name||'Sin nombre')}</strong><div class="small">${esc(w.code||'')} · Trabajador</div></div><div><span class="badge">${status}</span> <span class="badge">${has?'Código asignado':'Sin código'}</span></div><div class="user-actions">${has?`<button class="secondary pin-user" data-id="${w.id}">Cambiar código</button><button class="secondary toggle-user" data-id="${w.id}" data-active="${u.active}">${u.active?'Desactivar':'Activar'}</button>`:`<button class="secondary create-user" data-id="${w.id}">Crear acceso</button>`}</div></div>`}).join(''):'<div class="empty">No hay trabajadores activos en la empresa.</div>'}</div></div>`;document.getElementById('newUser').onclick=()=>showCreate(workers,byId);c.querySelectorAll('.toggle-user').forEach(b=>b.onclick=()=>update(b.dataset.id,{active:b.dataset.active!=='true'}));c.querySelectorAll('.pin-user').forEach(b=>b.onclick=()=>changePin(b.dataset.id));c.querySelectorAll('.create-user').forEach(b=>b.onclick=()=>createFor(b.dataset.id))}
