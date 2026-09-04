@@ -1,0 +1,1 @@
+Recursos gráficos locales de Control Horario V3.3. El logotipo IMASYS utilizado por la aplicación se almacena en el repositorio y no depende de la web externa de IMASYS.
