@@ -1,28 +1,24 @@
-# Control Horario V3.2
+# Control Horario V3.3 Cloud
 
-PWA para partes diarios de trabajo, preparada para instalarse en móviles y ordenadores sin instalar un programa tradicional.
+PWA para partes diarios de trabajo y control horario, con base de datos central Supabase y autenticación individual.
 
-## Funciones incluidas
+## Funciones
 
 - Parte diario con varias líneas.
-- Selección de trabajador, proyecto y tarea mediante listas.
+- Selección trabajador → proyecto → tarea.
 - Restricción de tareas por proyecto.
 - Cálculo automático de horas y pausas.
-- Envío del parte completo por WhatsApp.
-- Histórico local.
-- Exportación CSV.
-- Administración protegida por PIN configurable.
-- Alta y activación/desactivación de trabajadores, proyectos y tareas.
-- Código de proyecto independiente y editable, con propuesta automática de numeración.
-- Copia de seguridad y restauración en JSON.
-- Funcionamiento PWA y modo offline mediante Service Worker.
-- Instalación en Android, iPhone/iPad, Windows y otros equipos compatibles con PWA.
+- WhatsApp.
+- Histórico y CSV.
+- Dashboard.
+- Administración de trabajadores, proyectos y tareas.
+- PWA instalable en móvil y PC.
+- Base central compartida entre empleados.
+- Autenticación por usuario.
+- RLS por empresa y permisos por rol.
+- Copia local compatible con la V3.2.
 
-## Datos iniciales
-
-La aplicación se entrega vacía: no contiene trabajadores, proyectos ni tareas de ejemplo.
-
-Las seis tareas previstas pueden darse de alta desde Administración:
+## Tareas previstas
 
 1. Diseño
 2. Fabricación
@@ -31,24 +27,29 @@ Las seis tareas previstas pueden darse de alta desde Administración:
 5. Programación
 6. Robótica
 
-## Instalación y distribución
+## Acceso
 
-La aplicación se distribuye mediante un único enlace de GitHub Pages:
+La aplicación está publicada mediante GitHub Pages:
 
 https://aplicacionesindustriales-alt.github.io/Control-Horario/
 
-El trabajador abre el enlace desde su móvil o PC y utiliza la opción **Instalar aplicación** o **Añadir a pantalla de inicio** del navegador.
+Al entrar se puede crear la primera cuenta. La primera cuenta del proyecto se convierte automáticamente en administrador mediante la función protegida `bootstrap-admin`. Las cuentas posteriores requieren un perfil autorizado.
 
-No se necesita APK, EXE ni instalación manual de archivos.
+## Arquitectura
 
-Las instrucciones completas están en [INSTALACION.md](INSTALACION.md).
+- Frontend: HTML/CSS/JavaScript + PWA.
+- Backend: Supabase.
+- Base de datos: PostgreSQL 17.
+- Autenticación: Supabase Auth.
+- Seguridad: Row Level Security (RLS).
+- Despliegue: GitHub Pages + GitHub Actions.
 
-## Almacenamiento
+Detalles técnicos y de configuración: [SUPABASE_SETUP.md](SUPABASE_SETUP.md).
 
-Esta versión utiliza `localStorage` del navegador. Los datos permanecen en el dispositivo/navegador donde se introducen. La copia de seguridad permite trasladarlos manualmente a otro dispositivo.
+## Seguridad
 
-El PIN es una protección de acceso a la interfaz de administración del dispositivo; no debe considerarse un sistema de autenticación de servidor.
+La aplicación utiliza una clave publishable de Supabase en el navegador. No contiene claves service-role. El acceso a los datos está controlado mediante RLS y roles.
 
 ## Publicación
 
-El repositorio utiliza GitHub Pages mediante GitHub Actions. Cada cambio realizado en `main` se publica automáticamente cuando finaliza correctamente el flujo de despliegue.
+Cada cambio en `main` dispara automáticamente el workflow de GitHub Pages.
