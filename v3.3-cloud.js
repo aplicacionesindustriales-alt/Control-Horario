@@ -1,0 +1,42 @@
+(function(){
+'use strict';
+const C=window.ControlHorarioSupabase;
+if(!C||!C.configured)return;
+const LS={workers:'ch_workers',projects:'ch_projects',tasks:'ch_tasks',reports:'ch_reports',settings:'ch_settings'};
+const j=(k,d)=>{try{return JSON.parse(localStorage.getItem(k)||JSON.stringify(d))}catch{return d}};
+const set=(k,v)=>localStorage.setItem(k,JSON.stringify(v));
+let session=null,profile=null, syncing=false,lastHash='';
+function esc(v){return String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
+function ui(){if(document.getElementById('cloudPanel'))return;const d=document.createElement('div');d.id='cloudPanel';d.style='position:fixed;right:14px;bottom:76px;z-index:9999;max-width:360px';d.innerHTML='<div id="cloudBox" style="background:#fff;border:1px solid #e5e7eb;border-radius:16px;padding:14px;box-shadow:0 10px 30px #0002;font:14px system-ui"></div>';document.body.appendChild(d);return d.querySelector('#cloudBox')}
+function render(){const b=ui();if(!b)return;if(!session){b.innerHTML='<strong>☁️ Control Horario V3.3</strong><p style="margin:6px 0 10px;color:#6b7280">Base de datos central disponible.</p><input id="cloudEmail" type="email" placeholder="Email" style="width:100%;box-sizing:border-box;margin:3px 0;padding:8px"><input id="cloudPass" type="password" placeholder="Contraseña" style="width:100%;box-sizing:border-box;margin:3px 0;padding:8px"><div style="display:flex;gap:6px;margin-top:6px"><button id="cloudLogin">Entrar</button><button id="cloudSignup">Crear cuenta</button></div><small id="cloudMsg"></small>';document.getElementById('cloudLogin').onclick=login;document.getElementById('cloudSignup').onclick=signup;return}b.innerHTML='<strong>☁️ Conectado</strong><div style="margin:5px 0">'+esc(profile?.role||'usuario')+'</div><button id="cloudSync">Sincronizar ahora</button> <button id="cloudOut">Salir</button><small id="cloudMsg"></small>';document.getElementById('cloudSync').onclick=syncNow;document.getElementById('cloudOut').onclick=async()=>{await C.auth.signOut();location.reload()}}
+function msg(s){const x=document.getElementById('cloudMsg');if(x)x.textContent=s}
+async function login(){try{msg('Conectando…');const r=await C.auth.signIn(document.getElementById('cloudEmail').value.trim(),document.getElementById('cloudPass').value);if(r.error)throw r.error;session=r.data.session;await boot()}catch(e){msg(e.message||'Error de acceso')}}
+async function signup(){try{msg('Creando cuenta…');const r=await C.auth.signUp(document.getElementById('cloudEmail').value.trim(),document.getElementById('cloudPass').value);if(r.error)throw r.error;msg(r.data.session?'Cuenta creada.':'Revisa el email para confirmar la cuenta.')}catch(e){msg(e.message||'Error')}}
+async function loadProfile(){const {data,error}=await C.client.from('profiles').select('id,company_id,employee_id,role,active').eq('id',session.user.id).maybeSingle();if(error)throw error;profile=data}
+async function cloudData(){const company=profile.company_id;const [e,p,t,pt,ts]=await Promise.all([
+ C.client.from('employees').select('*').eq('company_id',company).eq('active',true).order('first_name'),
+ C.client.from('projects').select('*').eq('company_id',company).eq('status','active').order('code'),
+ C.client.from('tasks').select('*').eq('company_id',company).eq('active',true).order('name'),
+ C.client.from('project_tasks').select('*').eq('company_id',company).eq('active',true),
+ C.client.from('timesheets').select('*,timesheet_lines(*)').eq('company_id',company).order('work_date',{ascending:false})
+]);for(const r of [e,p,t,pt,ts])if(r.error)throw r.error;
+ const allowed={};pt.data.forEach(x=>(allowed[x.project_id]??=[]).push(x.task_id));
+ set(LS.workers,e.data.map(x=>({id:x.id,name:(x.first_name+' '+x.last_name).trim(),active:x.active,code:x.employee_code,email:x.email,phone:x.phone})));
+ set(LS.projects,p.data.map(x=>({id:x.id,code:x.code,name:x.name,description:x.description,active:true,allowedTaskIds:allowed[x.id]||[]})));
+ set(LS.tasks,t.data.map(x=>({id:x.id,name:x.name,description:x.description,active:true})));
+ set(LS.reports,ts.data.filter(x=>x.employee_id===profile.employee_id||profile.role!=='worker').map(x=>({id:x.id,date:x.work_date,workerId:x.employee_id,lines:(x.timesheet_lines||[]).map(l=>({projectId:l.project_id,taskId:l.task_id,start:l.start_time?.slice(0,5)||'',end:l.end_time?.slice(0,5)||'',break:0,note:l.description||''})),totalHours:Number(x.timesheet_lines?.reduce((s,l)=>s+Number(l.hours||0),0)||0),createdAt:x.created_at})));
+ lastHash=hashLocal();
+}
+function hashLocal(){return [LS.workers,LS.projects,LS.tasks,LS.reports].map(k=>localStorage.getItem(k)||'').join('|')}
+async function pushLocal(){if(syncing||!profile||!['admin','manager'].includes(profile.role))return;syncing=true;try{const company=profile.company_id,workers=j(LS.workers,[]),projects=j(LS.projects,[]),tasks=j(LS.tasks,[]),reports=j(LS.reports,[]);
+ for(const w of workers){const parts=String(w.name||'').trim().split(/\s+/);await C.client.from('employees').upsert({id:w.id,company_id:company,employee_code:w.code||w.id.slice(0,8),first_name:parts.shift()||w.name||'Trabajador',last_name:parts.join(' '),email:w.email||null,phone:w.phone||null,active:w.active!==false},{onConflict:'id'}).throwOnError()}
+ for(const t of tasks)await C.client.from('tasks').upsert({id:t.id,company_id:company,name:t.name,description:t.description||null,active:t.active!==false},{onConflict:'id'}).throwOnError();
+ for(const p of projects){await C.client.from('projects').upsert({id:p.id,company_id:company,code:p.code,name:p.name,description:p.description||null,status:p.active===false?'closed':'active'},{onConflict:'id'}).throwOnError();await C.client.from('project_tasks').delete().eq('project_id',p.id);for(const tid of (p.allowedTaskIds||[]))await C.client.from('project_tasks').upsert({company_id:company,project_id:p.id,task_id:tid,active:true},{onConflict:'project_id,task_id'}).throwOnError()}
+ for(const r of reports){await C.client.from('timesheets').upsert({id:r.id,company_id:company,employee_id:r.workerId,work_date:r.date,status:'submitted'},{onConflict:'id'}).throwOnError();await C.client.from('timesheet_lines').delete().eq('timesheet_id',r.id);for(const l of r.lines||[])await C.client.from('timesheet_lines').insert({timesheet_id:r.id,project_id:l.projectId,task_id:l.taskId,start_time:l.start||null,end_time:l.end||null,hours:calc(l.start,l.end,l.break),description:l.note||null}).throwOnError()}
+ lastHash=hashLocal();msg('Sincronizado ✓');}catch(e){msg('Error: '+(e.message||e))}finally{syncing=false}}
+function calc(a,b,br){if(!a||!b)return 0;let [ah,am]=a.split(':').map(Number),[bh,bm]=b.split(':').map(Number),m=bh*60+bm-ah*60-am;if(m<0)m+=1440;return Math.max(0,m-Number(br||0))/60}
+async function syncNow(){try{await pushLocal();await cloudData();location.reload()}catch(e){msg(e.message||'Error de sincronización')}}
+async function boot(){try{await loadProfile();if(!profile){render();msg('Cuenta creada. Un administrador debe darte de alta.');return}await cloudData();render();location.reload()}catch(e){render();msg(e.message||'No se pudo cargar la nube')}}
+async function init(){session=await C.auth.getSession();render();if(session)await boot();setInterval(async()=>{if(!session)return;const h=hashLocal();if(h!==lastHash)await pushLocal()},4000)}
+if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',init);else init();
+})();
