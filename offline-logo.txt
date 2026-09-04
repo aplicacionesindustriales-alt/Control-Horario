@@ -1,0 +1,1 @@
+IMASYS logo asset is bundled locally in this repository.
