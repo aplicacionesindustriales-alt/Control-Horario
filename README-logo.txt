@@ -1,0 +1,1 @@
+El logotipo corporativo se mantiene dentro del repositorio para que la aplicación no dependa de imasys.es para mostrar la identidad visual.
