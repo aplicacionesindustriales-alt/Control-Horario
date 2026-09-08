@@ -16,7 +16,7 @@ function enforce(){
  document.querySelectorAll('#navAdmin,#mobileAdmin,#adminBtn').forEach(x=>{if(x)x.style.display=admin?'':'none'});
  const worker=document.getElementById('worker'),employeeId=accessProfile.employee_id||ws?.employee_id||'';
  if(accessProfile.role==='worker'&&worker&&employeeId){let current=Array.from(worker.options).find(o=>o.value===employeeId);if(!current){current=document.createElement('option');current.value=employeeId;current.textContent=ws?.name||'Mi usuario';worker.appendChild(current)}worker.value=employeeId;worker.disabled=false;const label=worker.closest('label');if(label)label.classList.add('worker-field')}
- const historyWorker=document.getElementById('historyWorker');if(accessProfile.role==='worker'&&historyWorker){historyWorker.innerHTML='<option value="">Mis partes</option>';historyWorker.value='';historyWorker.disabled=true}
+ const historyWorker=document.getElementById('historyWorker');if(accessProfile.role==='worker'&&historyWorker&&employeeId){historyWorker.innerHTML='';const o=document.createElement('option');o.value=employeeId;o.textContent='Mis partes';historyWorker.appendChild(o);historyWorker.value=employeeId;historyWorker.disabled=true}
 }
 function guardAdmin(e){if(!accessProfile||isAdmin())return;const b=e.target.closest('#navAdmin,#mobileAdmin,#adminBtn,[data-view="adminView"]');if(b){e.preventDefault();e.stopImmediatePropagation();return false}}
 document.addEventListener('click',guardAdmin,true);
