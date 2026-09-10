@@ -1,11 +1,22 @@
 {
-  "name":"Control Horario V3.3 Cloud",
+  "id":"./",
+  "name":"Control Horario IMASYS",
   "short_name":"Control Horario",
-  "lang":"es",
+  "description":"Control horario y partes diarios de IMASYS.",
+  "lang":"es-ES",
   "start_url":"./",
+  "scope":"./",
   "display":"standalone",
-  "background_color":"#f3f4f6",
-  "theme_color":"#111827",
-  "description":"Aplicación PWA para partes diarios y control horario centralizado.",
-  "icons":[{"src":"icon.svg","sizes":"any","type":"image/svg+xml","purpose":"any maskable"}]
+  "display_override":["standalone","minimal-ui"],
+  "orientation":"portrait-primary",
+  "background_color":"#ffffff",
+  "theme_color":"#08a9b0",
+  "categories":["business","productivity"],
+  "icons":[
+    {"src":"icon.svg","sizes":"any","type":"image/svg+xml","purpose":"any maskable"}
+  ],
+  "shortcuts":[
+    {"name":"Nuevo parte","short_name":"Parte","description":"Abrir un nuevo parte diario","url":"./#parte","icons":[{"src":"icon.svg","sizes":"any","type":"image/svg+xml"}]},
+    {"name":"Histórico","short_name":"Histórico","description":"Consultar partes registrados","url":"./#historico","icons":[{"src":"icon.svg","sizes":"any","type":"image/svg+xml"}]}
+  ]
 }
